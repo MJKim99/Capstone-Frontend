@@ -1,14 +1,24 @@
 package com.example.capstone_frontend
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
+import com.google.android.gms.tasks.OnCompleteListener
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.ktx.database
+import com.google.firebase.iid.FirebaseInstanceId
+import com.google.firebase.ktx.Firebase
 import com.gun0912.tedpermission.PermissionListener
 import com.gun0912.tedpermission.TedPermission
 import kotlinx.android.synthetic.main.activity_main_home.*
+import java.io.IOException
 
 class MainHomeActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -16,6 +26,9 @@ class MainHomeActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main_home)
 
         setPermission()
+
+        val id = intent.getStringExtra("id").toString()
+        getToken(id)
 
         val type = intent.getStringExtra("type")
         val nickName = intent.getStringExtra("nickName")
@@ -46,14 +59,6 @@ class MainHomeActivity : AppCompatActivity() {
                 Log.d("call", "전화 실패")   
             }
         }
-
-        /*Push messages
-        val test: MyFirebaseInstanceIDService = MyFirebaseInstanceIDService()
-        test.onTokenRefresh()
-        Log.d(
-            "FCM Message TEST",
-            "REFRESHED TOKEN IS RIGHT ABOVE !!!"
-        )*/
     }
 
     private fun setPermission() {
@@ -75,5 +80,25 @@ class MainHomeActivity : AppCompatActivity() {
                 android.Manifest.permission.CALL_PHONE
             )
             .check()
+    }
+
+    public fun getToken(id: String) {
+        val db: DatabaseReference = Firebase.database.getReference("users")
+
+        Thread(Runnable {
+            try {
+                FirebaseInstanceId.getInstance().instanceId
+                    .addOnCompleteListener(OnCompleteListener { task ->
+                        if (!task.isSuccessful) {
+                            Log.i("로그 : ", "getInstanceId failed", task.exception)
+                            return@OnCompleteListener
+                        }
+                        val token = task.result?.token
+                        db.child(id).child("token").setValue(token)
+                    })
+            } catch (e: IOException) {
+                e.printStackTrace()
+            }
+        }).start()
     }
 }

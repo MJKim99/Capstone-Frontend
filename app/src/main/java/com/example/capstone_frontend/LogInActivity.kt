@@ -70,6 +70,7 @@ class LogInActivity : AppCompatActivity() {
 
                                 if (type == "P" || type == "C" && nickName != null) {
                                     val homeIntent = Intent(this, MainHomeActivity::class.java)
+                                    homeIntent.putExtra("id", id)
                                     homeIntent.putExtra("type", type)
                                     homeIntent.putExtra("nickName", nickName)
                                     startActivity(homeIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP))

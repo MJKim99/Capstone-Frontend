@@ -1,7 +1,10 @@
 package com.example.capstone_frontend
 
 import android.annotation.SuppressLint
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.widget.RadioGroup
@@ -16,6 +19,15 @@ class ChooseTypeActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_type)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channelId = "Dangerous situation"
+            val name = "위험 상황 탐지"
+            val importance = NotificationManager.IMPORTANCE_DEFAULT
+            val mChannel = NotificationChannel(channelId, name, importance)
+            val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(mChannel)
+        }
 
         val database: FirebaseDatabase = FirebaseDatabase.getInstance()
         val userReference: DatabaseReference = database.getReference("users")
@@ -80,6 +92,7 @@ class ChooseTypeActivity : AppCompatActivity() {
                                         writeNewUser(id, nickName, email, type, ageRange, userReference)
 
                                         val homeIntent = Intent(this@ChooseTypeActivity, MainHomeActivity::class.java)
+                                        homeIntent.putExtra("id", id)
                                         homeIntent.putExtra("type", type)
                                         homeIntent.putExtra("nickName", nickName)
                                         startActivity(homeIntent)
@@ -126,6 +139,7 @@ class ChooseTypeActivity : AppCompatActivity() {
                                         writeNewUser(id, nickName, email, type, ageRange, userReference)
 
                                         val homeIntent = Intent(this@ChooseTypeActivity, MainHomeActivity::class.java)
+                                        homeIntent.putExtra("id", id)
                                         homeIntent.putExtra("type", type)
                                         homeIntent.putExtra("nickName", nickName)
                                         startActivity(homeIntent)

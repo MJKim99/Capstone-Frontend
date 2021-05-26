@@ -7,11 +7,14 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.TextView
 import android.widget.Toast
+import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ktx.database
+import com.google.firebase.iid.FirebaseInstanceId
 import com.google.firebase.ktx.Firebase
 import com.kakao.sdk.user.UserApiClient
 import kotlinx.android.synthetic.main.activity_my_profile.*
+import java.io.IOException
 
 class MyProfileActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -25,6 +28,7 @@ class MyProfileActivity : AppCompatActivity() {
                 Log.e("TAG", "사용자 정보 요청 실패", error)
             } else if (user != null) {
                 id = user.id.toString()
+
             }
         }
 
@@ -74,4 +78,5 @@ class MyProfileActivity : AppCompatActivity() {
             }
         }
     }
+
 }

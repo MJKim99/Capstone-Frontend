@@ -47,12 +47,16 @@
                     android:host="oauth"
                     android:scheme="kakao5bec60bab0b4893040677633105f1a77" />
             </intent-filter>
-        </activity> <!-- Add FCM Service -->
+        </activity>
+
+        <!-- Add FCM Service
         <service android:name=".MyFirebaseInstanceIDService">
             <intent-filter>
                 <action android:name="com.google.firebase.INSTANCE_ID_EVENT" />
             </intent-filter>
-        </service>
+        </service>-->
+
+        <!-- FCM -->
         <service
             android:name=".MyFirebaseMessagingService"
             android:enabled="true"
