@@ -55,8 +55,6 @@ class MainHomeActivity : AppCompatActivity() {
                     val chatRoom = it.value.toString()
                     snapTalkIntent.putExtra("username", nickName)
                     snapTalkIntent.putExtra("roomNumber", chatRoom)
-                    Log.d("로그", nickName)
-                    Log.d("로그", chatRoom)
                     startActivity(snapTalkIntent)
                 }
             }

@@ -56,6 +56,8 @@ class SnaptalkActivity : AppCompatActivity() {
 
         setPermission() // 최초 권한 체크
 
+
+
         btn_camera.setOnClickListener {
             takeCapture() // 기본 카메라 앱 실행하여 사진 촬영
         }
@@ -68,9 +70,12 @@ class SnaptalkActivity : AppCompatActivity() {
     private fun initUI() {
         // 다크 모드 비활성화
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+        val username = intent.getStringExtra("username").toString()
+        val roomNumber = intent.getStringExtra("roomNumber").toString()
+
         val intent = Intent(applicationContext, ChatActivity::class.java)
-        intent.putExtra("username", "aa")
-        intent.putExtra("roomNumber", "a-b")
+        intent.putExtra("username", username)
+        intent.putExtra("roomNumber", roomNumber)
         startActivity(intent)
     }
 
