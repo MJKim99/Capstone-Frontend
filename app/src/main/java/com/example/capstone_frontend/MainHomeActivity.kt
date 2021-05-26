@@ -27,8 +27,9 @@ class MainHomeActivity : AppCompatActivity() {
 
         setPermission()
 
+        val db: DatabaseReference = Firebase.database.getReference("users")
         val id = intent.getStringExtra("id").toString()
-        getToken(id)
+        getToken(db, id)
 
         val type = intent.getStringExtra("type")
         val nickName = intent.getStringExtra("nickName")
@@ -47,7 +48,19 @@ class MainHomeActivity : AppCompatActivity() {
 
         btn_snaptalk.setOnClickListener {
             val snapTalkIntent = Intent(this, SnaptalkActivity::class.java)
-            startActivity(snapTalkIntent)
+
+            db.child(id).child("nickname").get().addOnSuccessListener {
+                val nickName = it.value.toString()
+                db.child(id).child("chatroom").get().addOnSuccessListener {
+                    val chatRoom = it.value.toString()
+                    snapTalkIntent.putExtra("username", nickName)
+                    snapTalkIntent.putExtra("roomNumber", chatRoom)
+                    Log.d("로그", nickName)
+                    Log.d("로그", chatRoom)
+                    startActivity(snapTalkIntent)
+                }
+            }
+
         }
 
         btn_emergency_call.setOnClickListener {
@@ -82,8 +95,8 @@ class MainHomeActivity : AppCompatActivity() {
             .check()
     }
 
-    public fun getToken(id: String) {
-        val db: DatabaseReference = Firebase.database.getReference("users")
+    public fun getToken(db: DatabaseReference, id: String) {
+
 
         Thread(Runnable {
             try {
@@ -94,7 +107,9 @@ class MainHomeActivity : AppCompatActivity() {
                             return@OnCompleteListener
                         }
                         val token = task.result?.token
-                        db.child(id).child("token").setValue(token)
+                        db.child(id).child("nickname").get().addOnSuccessListener {
+                            val username = it.value.toString()
+                        }
                     })
             } catch (e: IOException) {
                 e.printStackTrace()

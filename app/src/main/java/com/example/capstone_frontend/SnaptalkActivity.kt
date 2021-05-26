@@ -1,7 +1,9 @@
 package com.example.capstone_frontend
 
+import android.Manifest
 import android.app.Activity
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.net.Uri
@@ -12,9 +14,13 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.app.ActivityCompat
 import androidx.core.content.FileProvider
+import com.google.gson.Gson
 import com.gun0912.tedpermission.PermissionListener
 import com.gun0912.tedpermission.TedPermission
+import io.socket.client.Socket
 import kotlinx.android.synthetic.main.activity_intro.*
 import kotlinx.android.synthetic.main.activity_snaptalk.*
 import java.io.File
@@ -25,18 +31,47 @@ import java.util.*
 
 class SnaptalkActivity : AppCompatActivity() {
 
+    lateinit var mSocket: Socket // for socket
+    private val gson = Gson()
+
     val REQUEST_IMAGE_CAPTURE = 1 // 카메라 사진 촬영 요청 코드
     lateinit var curPhotoPath: String // 사진 경로 값
+
+    private val REQUEST_EXTERNAL_STORAGE = 200
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_snaptalk)
+
+        val PERMISSIONS_STORAGE = arrayOf(
+            Manifest.permission.READ_EXTERNAL_STORAGE
+        )
+        val readPermission = ActivityCompat.checkSelfPermission(
+            this,
+            Manifest.permission.READ_EXTERNAL_STORAGE
+        )
+        if (readPermission != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, PERMISSIONS_STORAGE, REQUEST_EXTERNAL_STORAGE)
+        }
 
         setPermission() // 최초 권한 체크
 
         btn_camera.setOnClickListener {
             takeCapture() // 기본 카메라 앱 실행하여 사진 촬영
         }
+
+        btn_chat.setOnClickListener {
+            initUI()
+        }
+    }
+
+    private fun initUI() {
+        // 다크 모드 비활성화
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+        val intent = Intent(applicationContext, ChatActivity::class.java)
+        intent.putExtra("username", "aa")
+        intent.putExtra("roomNumber", "a-b")
+        startActivity(intent)
     }
 
     private fun takeCapture() { // 카메라 촬영
@@ -66,7 +101,7 @@ class SnaptalkActivity : AppCompatActivity() {
     private fun createImageFile(): File { // 이미지 파일 생성
         val timestamp: String = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
         val storageDir: File? = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-        return File.createTempFile("JPEG_${timestamp}_", ".jpg", storageDir)
+        return File.createTempFile("PNG_${timestamp}_", ".png", storageDir)
             .apply { curPhotoPath = absolutePath }
     }
 
@@ -89,13 +124,14 @@ class SnaptalkActivity : AppCompatActivity() {
                 img_picture.setImageBitmap(bitmap)
             }
             savePhoto(bitmap)
+
         }
     }
 
     private fun savePhoto(bitmap: Bitmap) { // 갤러리에 저장
-        val folderPath = Environment.getExternalStorageDirectory().absolutePath + "/Pictures/" // 사진 폴더로 저장하기 위한 경로
+        val folderPath = Environment.getExternalStorageDirectory().absolutePath + "/DCIM/Hyojason/" // 사진 폴더로 저장하기 위한 경로
         val timestamp: String = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
-        val fileName = "${timestamp}.jpeg"
+        val fileName = "${timestamp}.png"
         val folder = File(folderPath)
 
         if (!folder.isDirectory) { // 해당 경로에 폴더가 존재하는지 검사 - 존재하지 않는 경우
@@ -104,9 +140,10 @@ class SnaptalkActivity : AppCompatActivity() {
 
         // 실제적인 저장 처리
         val out = FileOutputStream(folderPath + fileName)
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
         Toast.makeText(this, "사진이 앨범에 저장되었습니다.", Toast.LENGTH_SHORT).show()
     }
+
 
     /*
     TedPermission 설정
