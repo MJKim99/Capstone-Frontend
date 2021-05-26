@@ -2,18 +2,20 @@ package com.example.capstone_frontend
 
 import android.Manifest
 import android.app.Activity
+import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
+import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Build
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.app.ActivityCompat
 import androidx.core.content.FileProvider
@@ -23,11 +25,10 @@ import com.gun0912.tedpermission.TedPermission
 import io.socket.client.Socket
 import kotlinx.android.synthetic.main.activity_intro.*
 import kotlinx.android.synthetic.main.activity_snaptalk.*
-import java.io.File
-import java.io.FileOutputStream
-import java.io.IOException
+import java.io.*
 import java.text.SimpleDateFormat
 import java.util.*
+
 
 class SnaptalkActivity : AppCompatActivity() {
 
@@ -55,8 +56,6 @@ class SnaptalkActivity : AppCompatActivity() {
         }
 
         setPermission() // 최초 권한 체크
-
-
 
         btn_camera.setOnClickListener {
             takeCapture() // 기본 카메라 앱 실행하여 사진 촬영
@@ -106,7 +105,7 @@ class SnaptalkActivity : AppCompatActivity() {
     private fun createImageFile(): File { // 이미지 파일 생성
         val timestamp: String = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
         val storageDir: File? = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-        return File.createTempFile("PNG_${timestamp}_", ".png", storageDir)
+        return File.createTempFile("JPEG_${timestamp}_", ".jpg", storageDir)
             .apply { curPhotoPath = absolutePath }
     }
 
@@ -116,6 +115,7 @@ class SnaptalkActivity : AppCompatActivity() {
 
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == Activity.RESULT_OK) {
             val bitmap: Bitmap
+            val img_uri: Uri = Uri.fromFile(File(curPhotoPath))
             val file = File(curPhotoPath)
             if (Build.VERSION.SDK_INT < 28) { // 안드로이드 9.0 (Pie) 버전보다 낮은 경우
                 bitmap = MediaStore.Images.Media.getBitmap(contentResolver, Uri.fromFile(file))
@@ -128,27 +128,68 @@ class SnaptalkActivity : AppCompatActivity() {
                 bitmap = ImageDecoder.decodeBitmap(decode)
                 img_picture.setImageBitmap(bitmap)
             }
-            savePhoto(bitmap)
-
+            savePhoto(img_uri)
         }
     }
+    @Throws(IOException::class)
+    fun getBytes(image_uri: Uri?): ByteArray {
+        val iStream: InputStream? = contentResolver.openInputStream(image_uri!!)
+        val byteBuffer = ByteArrayOutputStream()
+        val bufferSize = 1024 // 버퍼 크기
+        val buffer = ByteArray(bufferSize) // 버퍼 배열
+        var len = 0
 
-    private fun savePhoto(bitmap: Bitmap) { // 갤러리에 저장
-        val folderPath = Environment.getExternalStorageDirectory().absolutePath + "/DCIM/Hyojason/" // 사진 폴더로 저장하기 위한 경로
-        val timestamp: String = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
-        val fileName = "${timestamp}.png"
-        val folder = File(folderPath)
+        if (iStream != null) { // InputStream에서 읽어올 게 없을 때까지 바이트 배열에 쓴다.
+            while (iStream.read(buffer).also({ len = it }) != -1) byteBuffer.write(buffer, 0, len)
+        }
+        return byteBuffer.toByteArray()
+    }
+    private fun savePhoto(image_uri: Uri) { // 갤러리에 저장
+        val values = ContentValues()
+        val fileName = "hyojason" + System.currentTimeMillis() + ".png"
+        values.put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
+        values.put(MediaStore.Images.Media.MIME_TYPE, "image/*")
 
-        if (!folder.isDirectory) { // 해당 경로에 폴더가 존재하는지 검사 - 존재하지 않는 경우
-            folder.mkdirs()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            values.put(MediaStore.Images.Media.IS_PENDING, 1)
         }
 
-        // 실제적인 저장 처리
-        val out = FileOutputStream(folderPath + fileName)
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+        val contentResolver = contentResolver
+        val item = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+
+        try {
+            val pdf = contentResolver.openFileDescriptor(item!!, "w", null)
+            if (pdf == null) {
+                Log.d("Camera", "null")
+            } else {
+                val inputData: ByteArray = getBytes(image_uri)
+                val fos = FileOutputStream(pdf.fileDescriptor)
+                fos.write(inputData)
+                fos.close()
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    values.clear()
+                    values.put(MediaStore.Images.Media.IS_PENDING, 0)
+                    contentResolver.update(item!!, values, null, null)
+                }
+                galleryAddPic(fileName) // 갱신
+            }
+        } catch (e: FileNotFoundException) {
+            e.printStackTrace()
+            Log.d("camera", "FileNotFoundException  : " + e.getLocalizedMessage())
+        } catch (e: Exception) {
+            Log.d("camera", "FileOutputStream = : " + e.message)
+        }
         Toast.makeText(this, "사진이 앨범에 저장되었습니다.", Toast.LENGTH_SHORT).show()
     }
+    private fun galleryAddPic(Image_Path: String) {
+        Log.d("camera", "갱신 : $Image_Path")
 
+        val file = File(Image_Path)
+        MediaScannerConnection.scanFile(
+            getApplicationContext(), arrayOf(file.toString()),
+            null, null
+        )
+    }
 
     /*
     TedPermission 설정

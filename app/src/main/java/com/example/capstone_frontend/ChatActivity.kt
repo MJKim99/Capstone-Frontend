@@ -47,8 +47,11 @@ class ChatActivity : AppCompatActivity() {
         retrofitClient = RetrofitClient.instance
 
         // MainActivity로부터 username과 roomNumber를 넘겨받음
+        val intent = intent
         username = intent.getStringExtra("username").toString()
         roomNumber = intent.getStringExtra("roomNumber").toString()
+        Log.d("로그", username)
+        Log.d("로그", roomNumber)
         adapter = ChatAdapter(applicationContext)
         val layoutManager = LinearLayoutManager(applicationContext)
         binding.recyclerView.layoutManager = layoutManager
