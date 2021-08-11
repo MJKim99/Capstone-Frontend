@@ -52,6 +52,6 @@ chatroom (채팅방 이름) : 친구 추가 시 생성되는 채팅방 이름. �
 Team Muyaho - Kyonggi university
 
 ## 작성자
-- Gitub: @MJKim99
+- Gitub: [@MJKim99](https://github.com/MJKim99)
 
 ---
